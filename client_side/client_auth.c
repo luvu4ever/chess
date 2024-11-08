@@ -9,7 +9,7 @@
 // Function to send a login request to the server
 void sendLoginRequest(int serverSocket, const char *username, const char *password) {
     char message[256];
-    snprintf(message, sizeof(message), "LOGIN:%s:%s", username, password);
+    snprintf(message, sizeof(message), "LOGIN %s %s", username, password);
     send(serverSocket, message, strlen(message), 0);
     printf("Sent login request for username: %s\n", username);
 }
@@ -26,7 +26,7 @@ void receiveLoginResponse(int serverSocket) {
 
 void sendRegisterRequest(int serverSocket, const char *username, const char *password) {
     char message[256];
-    snprintf(message, sizeof(message), "REGISTER:%s %s", username, password);
+    snprintf(message, sizeof(message), "REGISTER %s %s", username, password);
     send(serverSocket, message, strlen(message), 0);
     printf("Sent register request for username: %s\n", username);
 }
@@ -111,6 +111,7 @@ void register_account(int sock) {
         mvprintw(5, 2, "Press any key to try again...");
         getch();
         clear();
-        register_account(sock); // Retry registration
+        // register_account(sock); // Retry registration
+        display_login_menu(sock);
     }
 }

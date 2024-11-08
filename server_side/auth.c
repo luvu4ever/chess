@@ -5,24 +5,24 @@
 #include "auth.h"
 
 bool handle_login(const char *username, const char *password) {
-    char userpass[100];
-    snprintf(userpass, sizeof(userpass), "%s:%s", username, password);
-
     FILE *file = fopen("user.txt", "r");
     if (file == NULL) {
         perror("Could not open user.txt");
         return false;
     }
 
-    char file_userpass[100];
-    while (fgets(file_userpass, sizeof(file_userpass), file) != NULL) {
-        file_userpass[strcspn(file_userpass, "\n")] = 0; // Remove newline character
-        if (strcmp(userpass, file_userpass) == 0) {
+    char line[100];
+    char existing_username[50];
+    char existing_password[50];
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        sscanf(line, "%s %s", existing_username, existing_password);
+        if (strcmp(username, existing_username) == 0 && strcmp(password, existing_password) == 0) {
             fclose(file);
             return true;
         }
     }
-
+    
     fclose(file);
     return false;
 }
