@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include "client_handler.h"
+#include "datastructures.h"
 
 #define PORT 8080           // Define PORT locally
 #define MAX_EVENTS 10       // Define MAX_EVENTS locally

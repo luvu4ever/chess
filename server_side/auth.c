@@ -14,6 +14,7 @@ bool handle_login(const char *username, const char *password) {
     char line[100];
     char existing_username[50];
     char existing_password[50];
+    int score, games_played, status;
 
     while (fgets(line, sizeof(line), file) != NULL) {
         sscanf(line, "%s %s", existing_username, existing_password);

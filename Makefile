@@ -11,8 +11,9 @@ SERVER_DIR = server_side
 CLIENT_DIR = client_side
 
 # Source files
-SERVER_SRC = $(SERVER_DIR)/server.c $(SERVER_DIR)/client_handler.c $(SERVER_DIR)/auth.c
-CLIENT_SRC = $(CLIENT_DIR)/client.c $(CLIENT_DIR)/client_menu.c $(CLIENT_DIR)/client_auth.c $(CLIENT_DIR)/client_game.c
+# SERVER_SRC = $(SERVER_DIR)/server.c $(SERVER_DIR)/client_handler.c $(SERVER_DIR)/auth.c $(SERVER_DIR)/data
+SERVER_SRC = $(wildcard $(SERVER_DIR)/*.c)
+CLIENT_SRC = $(CLIENT_DIR)/client.c $(CLIENT_DIR)/client_menu.c $(CLIENT_DIR)/client_auth.c $(CLIENT_DIR)/client_game.c 
 
 # Libraries
 LIBS = -lncurses -lpthread
