@@ -32,6 +32,7 @@ void display_main_menu(int sock) {
     char *choices[] = {
         "Find Game",
         "Invite player",
+        "View players available",
         "Settings",
         "Leaderboard",
         "Help",
@@ -99,15 +100,18 @@ void handle_main_menu_selection(int choice, int sock) {
             send_invite(sock);
             break;
         case 2:
-            // Implement settings function
+            all_player_view(sock);
             break;
         case 3:
+            // Implement settings function
+                break;
+        case 4:
             // Implement leaderboard function
             break;
-        case 4:
+        case 5:
             // Implement help function
             break;
-        case 5:
+        case 6:
             endwin();
             exit(0);
             break;

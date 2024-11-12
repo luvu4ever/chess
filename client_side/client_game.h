@@ -2,5 +2,6 @@
 #define CLIENT_GAME_H
 
 void find_game(int sock);
+void all_player_view (int sock);
 
 #endif // CLIENT_GAME_H

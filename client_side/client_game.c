@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <errno.h>
 
 #define BUFFER_SIZE 256
@@ -120,3 +121,85 @@ void send_invite(int sock) {
     refresh();
 }
 
+void all_player_view(int sock) {
+    clear();
+    noecho();
+    char buffer[BUFFER_SIZE];
+    struct timeval tv;
+    fd_set readfds;
+    int ret;
+
+    // Set timeout for socket operations (5 seconds)
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    // Set socket receive timeout
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv) < 0) {
+        mvprintw(0, 2, "Failed to set socket options");
+        refresh();
+        napms(2000);
+        return;
+    }
+
+    // Send request
+    snprintf(buffer, sizeof(buffer), "VIEW_USERS");
+    if (send(sock, buffer, strlen(buffer), 0) < 0) {
+        mvprintw(0, 2, "Failed to send request");
+        refresh();
+        napms(2000);
+        return;
+    }
+
+    // Clear buffer and prepare for receiving
+    memset(buffer, 0, sizeof(buffer));
+
+    // Set up select() for timeout
+    FD_ZERO(&readfds);
+    FD_SET(sock, &readfds);
+
+    // Wait for response with timeout
+    ret = select(sock + 1, &readfds, NULL, NULL, &tv);
+    if (ret < 0) {
+        mvprintw(0, 2, "Select error");
+        refresh();
+        napms(2000);
+        return;
+    } else if (ret == 0) {
+        mvprintw(0, 2, "Operation timed out");
+        refresh();
+        napms(2000);
+        return;
+    }
+
+    // Receive data
+    int read_size = recv(sock, buffer, sizeof(buffer) - 1, 0);
+    if (read_size < 0) {
+        mvprintw(0, 2, "Failed to receive data");
+        refresh();
+        napms(2000);
+        return;
+    } else if (read_size == 0) {
+        mvprintw(0, 2, "Server disconnected");
+        refresh();
+        napms(2000);
+        return;
+    }
+
+    buffer[read_size] = '\0';  // Ensure null termination
+
+    // Display header
+    attron(A_BOLD);
+    mvprintw(0, 2, "Available Users:");
+    attroff(A_BOLD);
+
+    // Parse and display users
+    mvprintw(2, 0, "%s", buffer);
+
+    // Display navigation instructions
+    mvprintw(LINES - 2, 2, "Press any key to return to menu...");
+
+    refresh();
+    getch();
+    clear();
+    refresh();
+}

@@ -147,6 +147,25 @@ void handleInviteResponse(int clientSocket, char *params) {
     }
 }
 
+void handleViewPlayersAvailable(int clientSocket) {
+    char response[BUFFER_SIZE] = "";  // Main response buffer
+
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        if (players[i].is_active && players[i].socket_fd != clientSocket) {
+            char userInfo[100];  // Buffer for each user's info
+
+            // Format: "username elo\n"
+            snprintf(userInfo, sizeof(userInfo), "  %s\n",players[i].username);
+
+            // Add to main response
+            strcat(response, userInfo);
+        }
+    }
+
+    // Send the complete list to client
+    send(clientSocket, response, strlen(response), 0);
+}
+
 void start_game_for_clients(int player1_fd, int player2_fd) {
     char startMessage[] = "START_GAME";
     send(player1_fd, startMessage, strlen(startMessage), 0);
@@ -168,7 +187,8 @@ void *handleClient(void *clientSocketPointer) {
         {"REGISTER", handleRegisterCommand},
         {"FIND_GAME", handleFindgameCommand},
         {"SEND_INVITE", handleSendInviteCommand},
-        {"INVITE_RESPONSE", handleInviteResponse}
+        {"INVITE_RESPONSE", handleInviteResponse},
+        {"VIEW_USERS", handleViewPlayersAvailable}
     };
     int numHandlers = sizeof(handlers) / sizeof(handlers[0]);
 
