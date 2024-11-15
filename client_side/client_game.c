@@ -8,6 +8,68 @@
 
 #define BUFFER_SIZE 256
 
+void client_game_loop(int sock) {
+    ChessBoard board;
+    bool isWhite; // Set based on server assignment
+    
+    // Receive initial board state
+    receiveChessBoardUpdate(sock, &board);
+    
+    while (1) {
+        // Draw current board state
+        clear();
+        draw_board();
+        draw_pieces(&board);
+        
+        if ((isWhite && board.isWhiteTurn) || (!isWhite && !board.isWhiteTurn)) {
+            // My turn
+            handle_player_move(sock, &board);
+        } else {
+            // Opponent's turn
+            mvprintw(20, 0, "Waiting for opponent's move...");
+            refresh();
+            
+            // Wait for updated board after opponent's move
+            receiveChessBoardUpdate(sock, &board);
+        }
+        
+        // Check for game end conditions
+        if (/* game end condition */) {
+            break;
+        }
+    }
+}
+
+void handle_player_move(int sock, ChessBoard *board) {
+    char move[5];
+    mvprintw(20, 0, "Enter move (e.g. e2e4): ");
+    echo();
+    getstr(move);
+    noecho();
+    
+    // Send move to server
+    sendMove(sock, move);
+    
+    // Wait for server response
+    char buffer[BUFFER_SIZE];
+    recv(sock, buffer, sizeof(buffer)-1, 0);
+    
+    if (strcmp(buffer, "VALID_MOVE") == 0) {
+        // Wait for updated board state
+        receiveChessBoardUpdate(sock, board);
+        
+        // Redraw the board
+        clear();
+        draw_board();
+        draw_pieces(board);
+        refresh();
+    } else {
+        mvprintw(21, 0, "Invalid move! Try again.");
+        refresh();
+        napms(2000); // Show error for 2 seconds
+    }
+}
+
 void find_game(int sock) {
     char buffer[BUFFER_SIZE];
     int c;
@@ -78,15 +140,6 @@ void find_game(int sock) {
                 break;
             }
         }
-    }
-}
-
-void client_game_loop(int sock) {
-    // Implement the game loop logic here
-    // This function will handle the game state and communication with the server
-    while (1) {
-        // Game loop logic
-        // ...
     }
 }
 

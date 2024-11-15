@@ -15,44 +15,64 @@ int main() {
     return 0;
 }
 
-void start_chess_game() {
-    // Initialize the chess board
-    ChessBoard chessBoard;
-    initializeBoard(&chessBoard);
+void handle_player_move(int sock, ChessBoard *board) {
+    char move[5];
+    mvprintw(20, 0, "Enter move (e.g. e2e4): ");
+    echo();
+    getstr(move);
+    noecho();
+    
+    // Send move to server
+    sendMove(sock, move);
+    
+    // Wait for server response
+    char buffer[BUFFER_SIZE];
+    recv(sock, buffer, sizeof(buffer)-1, 0);
+    
+    if (strcmp(buffer, "VALID_MOVE") == 0) {
+        // Wait for updated board state
+        receiveChessBoardUpdate(sock, board);
+        
+        // Redraw the board
+        clear();
+        draw_board();
+        draw_pieces(board);
+        refresh();
+    } else {
+        mvprintw(21, 0, "Invalid move! Try again.");
+        refresh();
+        napms(2000); // Show error for 2 seconds
+    }
+}
 
-    initscr();
-    start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLACK); // Black squares
-    init_pair(2, COLOR_BLACK, COLOR_WHITE); // White squares
-    init_pair(5, COLOR_BLUE, COLOR_BLACK);  // Blue for white pieces on black squares
-    init_pair(6, COLOR_RED, COLOR_BLACK);   // Red for black pieces on black squares
-    init_pair(7, COLOR_BLUE, COLOR_WHITE);  // Blue for white pieces on white squares
-    init_pair(8, COLOR_RED, COLOR_WHITE);   // Red for black pieces on white squares
-
-    clear();
-    draw_board();
-    draw_pieces(&chessBoard);
-
-    refresh();
-    // input_and_move(&chessBoard);
-
-    // Game loop
-    // while (1) {
-    //     // Display the updated board and pieces
-    //     draw_board();
-    //     draw_pieces(&chessBoard);
-
-    //     // Handle player input and move the pieces
-    //     input_and_move(&chessBoard);
-
-    //     // Sending move data to the server
-    //     // Here you should form a message with move information, e.g., "e2e4"
-    //     // char moveMessage[10];
-    //     // snprintf(moveMessage, sizeof(moveMessage), "MOVE %d %d %d %d", 
-    //     //          /*from_x*/ 0, /*from_y*/ 1, /*to_x*/ 2, /*to_y*/ 3); // Replace with real move coordinates
-    //     // send(sock, moveMessage, strlen(moveMessage), 0);
-    // }
-
-    // End ncurses mode
-    endwin();
+void client_game_loop(int sock) {
+    ChessBoard board;
+    bool isWhite; // Set based on server assignment
+    
+    // Receive initial board state
+    receiveChessBoardUpdate(sock, &board);
+    
+    while (1) {
+        // Draw current board state
+        clear();
+        draw_board();
+        draw_pieces(&board);
+        
+        if ((isWhite && board.isWhiteTurn) || (!isWhite && !board.isWhiteTurn)) {
+            // My turn
+            handle_player_move(sock, &board);
+        } else {
+            // Opponent's turn
+            mvprintw(20, 0, "Waiting for opponent's move...");
+            refresh();
+            
+            // Wait for updated board after opponent's move
+            receiveChessBoardUpdate(sock, &board);
+        }
+        
+        // Check for game end conditions
+        if (/* game end condition */) {
+            break;
+        }
+    }
 }

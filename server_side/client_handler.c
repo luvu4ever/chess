@@ -147,11 +147,39 @@ void handleInviteResponse(int clientSocket, char *params) {
     }
 }
 
+void handleMoveCommand(int clientSocket, char *params) {
+    // Find player's active game
+    Lobby *lobby = find_player_lobby(clientSocket);
+    if (!lobby) {
+        char error[] = "ERROR: Not in active game";
+        send(clientSocket, error, strlen(error), 0);
+        return;
+    }
+    
+    // Handle the move
+    handle_game_move(clientSocket, &lobby->gameBoard, params);
+}
+
 void start_game_for_clients(int player1_fd, int player2_fd) {
+    // Initialize game state
+    ChessBoard gameBoard;
+    init_game_state(&gameBoard);
+
+    // Store game state in lobby
+    for (int i = 0; i < MAX_LOBBIES; i++) {
+        if (lobbies[i].player1_fd == player1_fd && 
+            lobbies[i].player2_fd == player2_fd) {
+            lobbies[i].gameBoard = gameBoard;
+            break;
+        }
+    }
+
+    // Notify players and send initial board state
     char startMessage[] = "START_GAME";
     send(player1_fd, startMessage, strlen(startMessage), 0);
     send(player2_fd, startMessage, strlen(startMessage), 0);
-    // Additional logic to initialize the game state can be added here
+    
+    broadcast_game_state(player1_fd, player2_fd, &gameBoard);
 }
 
 // Main function to handle client connection
@@ -168,7 +196,8 @@ void *handleClient(void *clientSocketPointer) {
         {"REGISTER", handleRegisterCommand},
         {"FIND_GAME", handleFindgameCommand},
         {"SEND_INVITE", handleSendInviteCommand},
-        {"INVITE_RESPONSE", handleInviteResponse}
+        {"INVITE_RESPONSE", handleInviteResponse},
+        {"MOVE", handleMoveCommand},
     };
     int numHandlers = sizeof(handlers) / sizeof(handlers[0]);
 
